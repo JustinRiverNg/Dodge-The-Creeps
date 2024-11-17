@@ -12,7 +12,6 @@ public partial class Main : Node
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		NewGame();
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -24,6 +23,8 @@ public partial class Main : Node
 	{
 		GetNode<Timer>("MobTimer").Stop();
 		GetNode<Timer>("ScoreTimer").Stop();
+		
+		GetNode<Hud>("HUD").ShowGameOver();
 	}
 	
 	public void NewGame()
@@ -35,11 +36,20 @@ public partial class Main : Node
 		player.Start(startPosition.Position);
 
 		GetNode<Timer>("StartTimer").Start();
+		
+		var hud = GetNode<Hud>("HUD");
+		hud.UpdateScore(_score);
+		hud.ShowMessage("Get Ready!");
+		
+		// Remove the "mobs" group which contains all mobs.
+		// This ensures that all mobs are gone when "Start" is pressed.
+		GetTree().CallGroup("mobs", Node.MethodName.QueueFree);
 	}
 	
 	public void OnScoreTimerTimeout()
 	{
-			_score++;
+		_score++;
+		GetNode<Hud>("HUD").UpdateScore(_score);
 	}
 	
 	// StartTimer is just the countdown until MobTimer and ScoreTimer start
@@ -58,12 +68,12 @@ public partial class Main : Node
 		// Choose a random location on Path2D.
 		var mobSpawnLocation = GetNode<PathFollow2D>("MobPath/MobSpawnLocation");
 		mobSpawnLocation.ProgressRatio = GD.Randf();
+		
+		// Set the mob's position to the random location.
+		mob.Position = mobSpawnLocation.Position;
 
 		// Set the mob's direction perpendicular to the path direction.
 		float direction = mobSpawnLocation.Rotation + Mathf.Pi / 2;
-
-		// Set the mob's position to a random location.
-		mob.Position = mobSpawnLocation.Position;
 
 		// Add some randomness to the direction.
 		direction += (float)GD.RandRange(-Mathf.Pi / 4, Mathf.Pi / 4);
